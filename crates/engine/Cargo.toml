@@ -1,0 +1,12 @@
+[package]
+name = "engine"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+# Wasm化するための必須設定。これがないとただの静的ライブラリになり、TSから読めません。
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# RustとJavaScript/TypeScriptを繋ぐ橋渡し役のライブラリ
+wasm-bindgen = "0.2"
