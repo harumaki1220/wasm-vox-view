@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
-import init, { CommentQueue } from "engine";
+import init, { CommentQueue, type InitOutput } from "engine";
 import wasmUrl from "engine/engine_bg.wasm?url";
 
 let globalQueue: CommentQueue | null = null;
-let initPromise: Promise<any> | null = null;
+let initPromise: Promise<InitOutput> | null = null;
 
 function App() {
   const [isReady, setIsReady] = useState(false);
   const [currentMessage, setCurrentMessage] =
     useState<string>("まだコメントはありません");
+  const [inputText, setInputText] = useState<string>("");
 
   useEffect(() => {
     const loadWasm = async () => {
@@ -32,9 +33,10 @@ function App() {
   // コメントを追加する関数
   const handleAddComment = () => {
     if (!globalQueue) return;
+    if (inputText.trim() === "") return;
 
-    globalQueue.add_comment(1, "テストユーザー", "こんにちは！Wasm！");
-    console.log("キューにコメントを追加しました");
+    globalQueue.add_comment(1, "ユーザー", inputText);
+    setInputText("");
   };
 
   // キューからコメントを取り出す関数
@@ -66,6 +68,17 @@ function App() {
         {/* 現在読み上げている（取り出した）コメントの表示エリア */}
         <div className="bg-gray-900 py-4 px-4 rounded-lg border border-gray-700 h-24 flex items-center justify-center">
           <p className="text-lg font-medium text-cyan-400">{currentMessage}</p>
+        </div>
+
+        {/* コメント入力フォーム */}
+        <div className="mb-4">
+          <input
+            type="text"
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            placeholder="コメントを入力..."
+            className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:outline-none focus:border-cyan-400"
+          />
         </div>
 
         {/* 操作ボタン */}
