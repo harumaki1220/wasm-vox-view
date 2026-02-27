@@ -39,6 +39,43 @@ function App() {
     setInputText("");
   };
 
+  // 受け取ったテキストをVOICEVOXで読み上げる関数
+  const playVoice = async (text: string) => {
+    const speakerId = 3; // ずんだもん（ノーマル）のID
+
+    try {
+      // 音声の設計図を作る（audio_query）
+      const queryRes = await fetch(
+        `http://127.0.0.1:50021/audio_query?text=${text}&speaker=${speakerId}`,
+        {
+          method: "POST",
+        },
+      );
+
+      // 結果をJSONとして取り出す
+      const queryJson = await queryRes.json();
+
+      // 設計図から音声データ（WAV）を作る（synthesis）
+      const synthRes = await fetch(
+        `http://127.0.0.1:50021/synthesis?speaker=${speakerId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(queryJson),
+        },
+      );
+
+      const audioBlob = await synthRes.blob(); // WAVデータをBlob（バイナリの塊）として受け取る
+      const audioUrl = URL.createObjectURL(audioBlob); // ブラウザで再生できる仮のURLを発行
+      const audio = new Audio(audioUrl); // Audioプレイヤーを作る
+      audio.play(); // 再生
+    } catch (error) {
+      console.error("音声再生エラー:", error);
+    }
+  };
+
   // キューからコメントを取り出す関数
   const handlePopComment = () => {
     if (!globalQueue) return;
@@ -47,6 +84,7 @@ function App() {
 
     if (result !== undefined) {
       setCurrentMessage(result);
+      playVoice(result);
     } else {
       setCurrentMessage("キューは空っぽです");
     }
