@@ -10,6 +10,7 @@ function App() {
   const [currentMessage, setCurrentMessage] =
     useState<string>("まだコメントはありません");
   const [inputText, setInputText] = useState<string>("");
+  const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
 
   useEffect(() => {
     const loadWasm = async () => {
@@ -70,21 +71,28 @@ function App() {
       const audioBlob = await synthRes.blob(); // WAVデータをBlob（バイナリの塊）として受け取る
       const audioUrl = URL.createObjectURL(audioBlob); // ブラウザで再生できる仮のURLを発行
       const audio = new Audio(audioUrl); // Audioプレイヤーを作る
-      audio.play(); // 再生
+      await new Promise((resolve) => {
+        audio.onended = resolve; // 音声が最後まで再生されたら、待機を解除する
+        audio.play(); // 再生
+      });
+
+      URL.revokeObjectURL(audioUrl);
     } catch (error) {
       console.error("音声再生エラー:", error);
     }
   };
 
   // キューからコメントを取り出す関数
-  const handlePopComment = () => {
+  const handlePopComment = async () => {
     if (!globalQueue) return;
 
     const result = globalQueue.pop_next_text();
 
     if (result !== undefined) {
       setCurrentMessage(result);
-      playVoice(result);
+      setIsSpeaking(true);
+      await playVoice(result);
+      setIsSpeaking(false);
     } else {
       setCurrentMessage("キューは空っぽです");
     }
@@ -129,9 +137,14 @@ function App() {
           </button>
           <button
             onClick={handlePopComment}
-            className="bg-pink-600 hover:bg-pink-500 text-white font-bold py-2 px-4 rounded transition-colors"
+            disabled={isSpeaking}
+            className={`text-white font-bold py-2 px-4 rounded transition-colors ${
+              isSpeaking
+                ? "bg-gray-500 cursor-not-allowed"
+                : "bg-pink-600 hover:bg-pink-500"
+            }`}
           >
-            取り出す
+            {isSpeaking ? "処理中..." : "取り出す"}
           </button>
         </div>
       </div>
