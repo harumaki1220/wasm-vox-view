@@ -11,25 +11,7 @@ function App() {
     useState<string>("まだコメントはありません");
   const [inputText, setInputText] = useState<string>("");
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
-
-  useEffect(() => {
-    const loadWasm = async () => {
-      try {
-        if (!initPromise) {
-          initPromise = init(wasmUrl);
-        }
-        await initPromise;
-
-        if (!globalQueue) {
-          globalQueue = new CommentQueue();
-        }
-        setIsReady(true);
-      } catch (error) {
-        console.error("Wasm初期化エラー:", error);
-      }
-    };
-    loadWasm();
-  }, []);
+  const [isAutoPlay, setIsAutoPlay] = useState<boolean>(false);
 
   // コメントを追加する関数
   const handleAddComment = () => {
@@ -98,6 +80,47 @@ function App() {
     }
   };
 
+  useEffect(() => {
+    const loadWasm = async () => {
+      try {
+        if (!initPromise) {
+          initPromise = init(wasmUrl);
+        }
+        await initPromise;
+
+        if (!globalQueue) {
+          globalQueue = new CommentQueue();
+        }
+        setIsReady(true);
+      } catch (error) {
+        console.error("Wasm初期化エラー:", error);
+      }
+    };
+    loadWasm();
+  }, []);
+
+  // 自動読み上げ監視ループ
+  useEffect(() => {
+    if (!isAutoPlay || isSpeaking) return;
+    const interval = setInterval(() => {
+      if (!globalQueue) return;
+
+      const result = globalQueue.pop_next_text();
+
+      if (result !== undefined) {
+        clearInterval(interval);
+        setCurrentMessage(result);
+        setIsSpeaking(true);
+
+        playVoice(result).then(() => {
+          setIsSpeaking(false);
+        });
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isAutoPlay, isSpeaking]);
+
   if (!isReady) {
     return (
       <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
@@ -146,6 +169,20 @@ function App() {
           >
             {isSpeaking ? "処理中..." : "取り出す"}
           </button>
+        </div>
+
+        {/* 自動再生の切り替えスイッチ */}
+        <div className="flex items-center justify-center gap-2 mb-4">
+          <input
+            type="checkbox"
+            id="autoPlay"
+            checked={isAutoPlay}
+            onChange={(e) => setIsAutoPlay(e.target.checked)}
+            className="w-5 h-5 cursor-pointer"
+          />
+          <label htmlFor="autoPlay" className="cursor-pointer select-none">
+            自動読み上げをONにする
+          </label>
         </div>
       </div>
     </div>
