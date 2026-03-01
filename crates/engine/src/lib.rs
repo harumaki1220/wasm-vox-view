@@ -1,10 +1,12 @@
+use serde::Serialize;
 use wasm_bindgen::prelude::*;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize)]
 struct Comment {
     id: i32,
     author: String,
-    text: String,
+    display_text: String,
+    speech_text: String,
 }
 
 #[wasm_bindgen]
@@ -27,7 +29,8 @@ impl CommentQueue {
         let new_comment = Comment {
             id,
             author,
-            text: processed_text,
+            display_text: text,
+            speech_text: processed_text,
         };
         self.items.push(new_comment);
     }
@@ -37,7 +40,7 @@ impl CommentQueue {
             None
         } else {
             let comment = self.items.remove(0);
-            Some(comment.text)
+            Some(serde_json::to_string(&comment).unwrap())
         }
     }
 }

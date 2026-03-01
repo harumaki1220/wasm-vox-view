@@ -5,6 +5,13 @@ import wasmUrl from "engine/engine_bg.wasm?url";
 let globalQueue: CommentQueue | null = null;
 let initPromise: Promise<InitOutput> | null = null;
 
+type CommentData = {
+  id: number;
+  author: string;
+  display_text: string;
+  speech_text: string;
+};
+
 function App() {
   const [isReady, setIsReady] = useState(false);
   const [currentMessage, setCurrentMessage] =
@@ -71,9 +78,10 @@ function App() {
     const result = globalQueue.pop_next_text();
 
     if (result !== undefined) {
-      setCurrentMessage(result);
+      const parsedComment = JSON.parse(result) as CommentData;
+      setCurrentMessage(parsedComment.display_text);
       setIsSpeaking(true);
-      await playVoice(result);
+      await playVoice(parsedComment.speech_text);
       setIsSpeaking(false);
     } else {
       setCurrentMessage("キューは空っぽです");
@@ -108,11 +116,12 @@ function App() {
       const result = globalQueue.pop_next_text();
 
       if (result !== undefined) {
+        const parsedComment = JSON.parse(result) as CommentData;
         clearInterval(interval);
-        setCurrentMessage(result);
+        setCurrentMessage(parsedComment.display_text);
         setIsSpeaking(true);
 
-        playVoice(result).then(() => {
+        playVoice(parsedComment.speech_text).then(() => {
           setIsSpeaking(false);
         });
       }
