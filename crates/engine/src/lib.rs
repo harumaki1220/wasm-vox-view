@@ -1,5 +1,31 @@
+use serde::Deserialize;
 use serde::Serialize;
 use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen]
+struct CommentQueue {
+    items: Vec<Comment>,
+}
+
+// 一番外側の {} に対応する構造体
+#[derive(Deserialize)]
+struct YouTubeResponse {
+    items: Vec<YouTubeItem>,
+}
+
+// items の中の {} に対応する構造体
+#[derive(Deserialize)]
+struct YouTubeItem {
+    snippet: ChatSnippet,
+}
+
+// snippet の中の {} に対応する構造体
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ChatSnippet {
+    display_message: String,
+    author_channel_id: String,
+}
 
 #[derive(Clone, Debug, Serialize)]
 struct Comment {
@@ -7,11 +33,6 @@ struct Comment {
     author: String,
     display_text: String,
     speech_text: String,
-}
-
-#[wasm_bindgen]
-struct CommentQueue {
-    items: Vec<Comment>,
 }
 
 #[wasm_bindgen]
@@ -46,6 +67,30 @@ impl CommentQueue {
 }
 
 #[wasm_bindgen]
-pub fn greet(name: &str) -> String {
-    format!("Hello, {}! RustのWasmエンジンからの返答です。", name)
+pub fn test_parse_youtube_json() -> String {
+    // YouTubeが送ってくる本物そっくりのダミーJSON文字列
+    let dummy_json = r#"{
+        "items": [
+            {
+                "snippet": {
+                    "displayMessage": "Rustからのパーステスト成功w",
+                    "authorChannelId": "UC_dummy12345"
+                }
+            }
+        ]
+    }"#;
+
+    // JSON文字列を、作った構造体に解凍（パース）してみる
+    // from_str は serde_json の機能で、文字列を構造体に変換します
+    match serde_json::from_str::<YouTubeResponse>(dummy_json) {
+        Ok(parsed) => {
+            // パースに成功したら、一番奥の display_message を取り出して返す
+            let msg = parsed.items[0].snippet.display_message.clone();
+            format!("大成功！取り出した文字: {}", msg)
+        }
+        Err(e) => {
+            // もし構造体の設計が間違っていたらエラーメッセージを返す
+            format!("パース失敗... 理由: {}", e)
+        }
+    }
 }

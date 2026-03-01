@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
-import init, { CommentQueue, type InitOutput } from "engine";
+import init, {
+  CommentQueue,
+  test_parse_youtube_json,
+  type InitOutput,
+} from "engine";
 import wasmUrl from "engine/engine_bg.wasm?url";
 
 let globalQueue: CommentQueue | null = null;
@@ -86,6 +90,13 @@ function App() {
     } else {
       setCurrentMessage("キューは空っぽです");
     }
+  };
+
+  // テスト用の関数
+  const handleTestParse = () => {
+    const result = test_parse_youtube_json();
+    console.log(result);
+    alert(result);
   };
 
   useEffect(() => {
@@ -177,6 +188,12 @@ function App() {
             }`}
           >
             {isSpeaking ? "処理中..." : "取り出す"}
+          </button>
+          <button
+            onClick={handleTestParse}
+            className="bg-green-600 hover:bg-green-500 text-white font-bold py-2 px-4 rounded transition-colors"
+          >
+            JSON解凍テスト
           </button>
         </div>
 
