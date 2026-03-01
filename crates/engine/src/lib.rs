@@ -20,7 +20,15 @@ impl CommentQueue {
     }
 
     pub fn add_comment(&mut self, id: i32, author: String, text: String) {
-        let new_comment = Comment { id, author, text };
+        if text.contains("バカ") {
+            return;
+        }
+        let processed_text = text.replace("w", "わら");
+        let new_comment = Comment {
+            id,
+            author,
+            text: processed_text,
+        };
         self.items.push(new_comment);
     }
 
